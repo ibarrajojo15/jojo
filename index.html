@@ -171,7 +171,7 @@ button{font-family:inherit}
   background:var(--surface); color:var(--fg); cursor:pointer; display:grid; place-items:center; transition:transform .12s, background .2s}
 .icon-btn:hover{transform:translateY(-1px)}
 .icon-btn svg{width:20px; height:20px}
-.lang-btn{min-width:auto; width:auto; padding:0 .7rem; font-family:"Outfit"; font-weight:700; font-size:.82rem; letter-spacing:.04em; gap:.25rem}
+.lang-btn{display:flex; align-items:center; min-width:auto; width:auto; padding:0 .7rem; font-family:"Outfit"; font-weight:700; font-size:.82rem; letter-spacing:.04em; gap:.25rem}
 .lang-btn .on{color:var(--accent)}
 .cart-count{position:absolute; top:-6px; right:-6px; min-width:19px; height:19px; padding:0 4px; border-radius:999px;
   background:var(--sale); color:#fff; font-size:.68rem; font-weight:700; display:grid; place-items:center; font-family:"Outfit"}
@@ -290,8 +290,8 @@ button{font-family:inherit}
   background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
 
 /* ---------- Cart drawer ---------- */
-.scrim{position:fixed; inset:0; background:var(--scrim); z-index:80; opacity:0; transition:opacity .25s}
-.scrim.open{opacity:1}
+.scrim{position:fixed; inset:0; background:var(--scrim); z-index:80; opacity:0; pointer-events:none; transition:opacity .25s}
+.scrim.open{opacity:1; pointer-events:auto}
 .drawer{position:fixed; top:0; right:0; height:100%; width:min(420px,100%); z-index:90; background:var(--drawer-bg);
   backdrop-filter:var(--nav-blur); -webkit-backdrop-filter:var(--nav-blur);
   border-left:1px solid var(--line); box-shadow:-20px 0 60px rgba(0,0,0,.2);
@@ -354,8 +354,8 @@ button{font-family:inherit}
 }
 @media (max-width:720px){
   .nav-links{display:none; position:absolute; top:62px; left:0; right:0; flex-direction:column; gap:0;
-    background:var(--nav-bg); backdrop-filter:var(--nav-blur); -webkit-backdrop-filter:var(--nav-blur);
-    border-bottom:1px solid var(--line); margin-left:0; padding:8px max(18px,env(safe-area-inset-left,0px))}
+    background:var(--bg); backdrop-filter:var(--nav-blur); -webkit-backdrop-filter:var(--nav-blur);
+    border-bottom:1px solid var(--line); box-shadow:var(--shadow); margin-left:0; padding:8px max(18px,env(safe-area-inset-left,0px))}
   .nav-links.open{display:flex}
   .nav-links button{padding:.8rem .2rem; font-size:1rem; width:100%; text-align:left; border-bottom:1px solid var(--line)}
   .nav-links button:last-child{border-bottom:0}
