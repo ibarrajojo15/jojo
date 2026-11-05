@@ -1,0 +1,1216 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Jerseys Barato</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=Anton&display=swap">
+<!-- Google <model-viewer> web component for real draggable 3D GLB jerseys -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
+<style>
+/* ============================================================
+   JERSEYS BARATO — storefront mock-up
+   Layout concept: a calm, Apple-clean canvas where the kit is the
+   hero; sticky translucent nav; full-width product grids; a slide-in
+   cart. One accent (pitch green) carries all energy; neutrals carry a
+   faint green bias. Three deliberate skins: Light / Dark / Glass.
+   ============================================================ */
+
+/* ---- Design tokens: LIGHT (default) ---- */
+:root{
+  --bg:#f6f7f6;          /* near-white, faint green bias */
+  --surface:#ffffff;
+  --surface-2:#eef0ee;
+  --card:#ffffff;
+  --fg:#0d120f;          /* near-black */
+  --fg-soft:#55605a;
+  --fg-faint:#8b958f;
+  --line:#e3e6e3;
+  --accent:#009f58;      /* pitch green */
+  --accent-ink:#ffffff;
+  --accent-soft:rgba(0,159,88,.12);
+  --sale:#e0352b;        /* semantic: sale/alert */
+  --gold:#caa24a;
+  --shadow:0 1px 2px rgba(13,18,15,.06), 0 12px 30px rgba(13,18,15,.08);
+  --shadow-sm:0 1px 2px rgba(13,18,15,.08);
+  --nav-bg:rgba(246,247,246,.72);
+  --nav-blur:saturate(180%) blur(20px);
+  --drawer-bg:#ffffff;
+  --scrim:rgba(13,18,15,.42);
+  --stage-grad:radial-gradient(120% 120% at 50% 0%, #ffffff 0%, #eef0ee 70%);
+  --radius:18px;
+  --radius-sm:12px;
+  --maxw:1180px;
+}
+/* ---- DARK ---- */
+:root[data-theme="dark"]{
+  --bg:#0b0e0c;
+  --surface:#141814;
+  --surface-2:#1c221d;
+  --card:#141814;
+  --fg:#eef2ef;
+  --fg-soft:#aab4ad;
+  --fg-faint:#6f7a73;
+  --line:#262d27;
+  --accent:#19c56f;
+  --accent-ink:#06130b;
+  --accent-soft:rgba(25,197,111,.16);
+  --sale:#ff5b50;
+  --gold:#d9b969;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 18px 40px rgba(0,0,0,.5);
+  --shadow-sm:0 1px 2px rgba(0,0,0,.5);
+  --nav-bg:rgba(11,14,12,.66);
+  --nav-blur:saturate(180%) blur(20px);
+  --drawer-bg:#141814;
+  --scrim:rgba(0,0,0,.6);
+  --stage-grad:radial-gradient(120% 120% at 50% 0%, #1b211c 0%, #0b0e0c 72%);
+  color-scheme:dark;
+}
+/* ---- GLASS (glassmorphism over a living gradient) ---- */
+:root[data-theme="glass"]{
+  --bg:#0a1220;
+  --surface:rgba(255,255,255,.08);
+  --surface-2:rgba(255,255,255,.14);
+  --card:rgba(255,255,255,.10);
+  --fg:#f4f8ff;
+  --fg-soft:#c6d2e6;
+  --fg-faint:#90a0bd;
+  --line:rgba(255,255,255,.18);
+  --accent:#49f2a2;
+  --accent-ink:#05231a;
+  --accent-soft:rgba(73,242,162,.18);
+  --sale:#ff7a6e;
+  --gold:#ffd98a;
+  --shadow:0 2px 10px rgba(0,0,0,.25), 0 24px 60px rgba(0,0,0,.35);
+  --shadow-sm:0 1px 3px rgba(0,0,0,.25);
+  --nav-bg:rgba(255,255,255,.10);
+  --nav-blur:saturate(160%) blur(26px);
+  --drawer-bg:rgba(20,30,48,.72);
+  --scrim:rgba(4,8,16,.5);
+  --stage-grad:linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.03));
+  color-scheme:dark;
+}
+:root[data-theme="glass"] body{
+  background:
+    radial-gradient(60% 50% at 12% 8%, #1f6feb55 0%, transparent 60%),
+    radial-gradient(55% 45% at 88% 14%, #16c79a4d 0%, transparent 60%),
+    radial-gradient(70% 60% at 50% 100%, #7b61ff40 0%, transparent 60%),
+    #0a1220;
+  background-attachment:fixed;
+}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  background:var(--bg);
+  color:var(--fg);
+  font-family:"Manrope", ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  font-size:16px; line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  overflow-x:hidden;
+}
+img{max-width:100%}
+[hidden]{display:none!important}
+h1,h2,h3{font-family:"Outfit", ui-sans-serif, system-ui, sans-serif; margin:0; line-height:1.08; text-wrap:balance; letter-spacing:-.02em}
+h1{font-weight:800}
+h2{font-weight:700}
+p{margin:0}
+a{color:inherit}
+button{font-family:inherit}
+.tnum{font-variant-numeric:tabular-nums}
+.wrap{width:100%; max-width:var(--maxw); margin:0 auto;
+  padding-left:max(18px, env(safe-area-inset-left,0px));
+  padding-right:max(18px, env(safe-area-inset-right,0px));
+}
+.eyebrow{font-family:"Outfit"; text-transform:uppercase; letter-spacing:.16em; font-size:.72rem; font-weight:700; color:var(--accent)}
+.muted{color:var(--fg-soft)}
+.faint{color:var(--fg-faint)}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex; align-items:center; justify-content:center; gap:.5rem;
+  border:1px solid transparent; border-radius:999px; cursor:pointer;
+  font-family:"Outfit"; font-weight:600; font-size:.95rem; padding:.7rem 1.25rem;
+  background:var(--surface-2); color:var(--fg); transition:transform .12s ease, background .2s, opacity .2s;
+  -webkit-tap-highlight-color:transparent;}
+.btn:hover{transform:translateY(-1px)}
+.btn:active{transform:translateY(0)}
+.btn-primary{background:var(--accent); color:var(--accent-ink)}
+.btn-ghost{background:transparent; border-color:var(--line); color:var(--fg)}
+.btn-block{width:100%}
+.btn-sm{padding:.5rem .9rem; font-size:.85rem}
+.btn:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible, .dot:focus-visible{outline:3px solid var(--accent); outline-offset:2px}
+
+/* ---------- Deal banner (always on, above nav) ---------- */
+.deal{position:relative; z-index:60; width:100%; background:var(--accent); color:var(--accent-ink);
+  border:0; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:.6rem;
+  padding:.55rem max(18px, env(safe-area-inset-left,0px));
+  padding-top:calc(.55rem + env(safe-area-inset-top,0px));
+  font-family:"Outfit"; font-weight:700; font-size:.9rem; letter-spacing:.01em; text-align:center;
+  transition:filter .2s}
+.deal:hover{filter:brightness(1.05)}
+.deal .bolt{font-size:1rem}
+.deal .chev{opacity:.85; font-weight:700}
+
+/* ---------- Nav ---------- */
+.nav{position:sticky; top:env(safe-area-inset-top,0px); z-index:50;
+  background:var(--nav-bg); backdrop-filter:var(--nav-blur); -webkit-backdrop-filter:var(--nav-blur);
+  border-bottom:1px solid var(--line)}
+.nav-inner{display:flex; align-items:center; gap:1rem; height:62px}
+.brand{display:flex; align-items:baseline; gap:.1rem; font-family:"Outfit"; font-weight:800; font-size:1.3rem;
+  letter-spacing:-.03em; cursor:pointer; background:none; border:0; color:var(--fg); padding:0; white-space:nowrap}
+.brand b{color:var(--accent); font-weight:800}
+.nav-links{display:flex; gap:.25rem; margin-left:1rem; flex:1}
+.nav-links button{background:none; border:0; color:var(--fg-soft); cursor:pointer; font-family:"Outfit";
+  font-weight:600; font-size:.92rem; padding:.5rem .7rem; border-radius:10px; white-space:nowrap; transition:color .15s, background .15s}
+.nav-links button:hover{color:var(--fg); background:var(--surface-2)}
+.nav-links button.active{color:var(--accent)}
+.nav-tools{display:flex; align-items:center; gap:.4rem}
+.icon-btn{position:relative; width:40px; height:40px; border-radius:12px; border:1px solid var(--line);
+  background:var(--surface); color:var(--fg); cursor:pointer; display:grid; place-items:center; transition:transform .12s, background .2s}
+.icon-btn:hover{transform:translateY(-1px)}
+.icon-btn svg{width:20px; height:20px}
+.lang-btn{display:flex; align-items:center; min-width:auto; width:auto; padding:0 .7rem; font-family:"Outfit"; font-weight:700; font-size:.82rem; letter-spacing:.04em; gap:.25rem}
+.lang-btn .on{color:var(--accent)}
+.cart-count{position:absolute; top:-6px; right:-6px; min-width:19px; height:19px; padding:0 4px; border-radius:999px;
+  background:var(--sale); color:#fff; font-size:.68rem; font-weight:700; display:grid; place-items:center; font-family:"Outfit"}
+.cart-count[data-empty="true"]{display:none}
+.hamburger{display:none}
+
+/* ---------- Views ---------- */
+.view{padding-block:34px 60px; animation:fade .32s ease}
+@keyframes fade{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+@media (prefers-reduced-motion:reduce){.view{animation:none} *{scroll-behavior:auto!important}}
+
+/* ---------- Hero ---------- */
+.hero{display:grid; grid-template-columns:1.05fr 1fr; gap:34px; align-items:center}
+.hero-copy h1{font-size:clamp(2.3rem,6vw,3.7rem)}
+.hero-copy .lede{margin-top:1rem; font-size:1.08rem; color:var(--fg-soft); max-width:46ch}
+.hero-cta{display:flex; gap:.7rem; margin-top:1.6rem; flex-wrap:wrap}
+.hero-stats{display:flex; gap:1.6rem; margin-top:2rem; flex-wrap:wrap}
+.hero-stats .s{display:flex; flex-direction:column}
+.hero-stats .s b{font-family:"Outfit"; font-weight:800; font-size:1.4rem}
+.hero-stats .s span{font-size:.8rem; color:var(--fg-faint); text-transform:uppercase; letter-spacing:.08em}
+
+/* ---------- Jersey 3D stage ---------- */
+.stage-wrap{display:flex; flex-direction:column; align-items:center; gap:14px}
+.stage{width:min(330px,80vw); aspect-ratio:300/360; border-radius:26px; background:var(--stage-grad);
+  border:1px solid var(--line); box-shadow:var(--shadow); position:relative; overflow:hidden;
+  perspective:1300px; touch-action:none; cursor:grab; user-select:none}
+.stage.dragging{cursor:grabbing}
+.stage::after{content:""; position:absolute; left:14%; right:14%; bottom:7%; height:16px; border-radius:50%;
+  background:radial-gradient(closest-side, rgba(0,0,0,.28), transparent); filter:blur(3px)}
+.rot{position:absolute; inset:0; transform-style:preserve-3d; transform:rotateY(-18deg)}
+.layer{position:absolute; inset:0; display:grid; place-items:center}
+.layer svg{width:72%; height:auto; overflow:visible}
+.layer.detail{backface-visibility:hidden}
+.spin-hint{display:flex; align-items:center; gap:.5rem; font-family:"Outfit"; font-weight:600; font-size:.82rem; color:var(--fg-faint)}
+.spin-hint svg{width:16px;height:16px}
+
+/* ---------- Hero 3D model-viewer ---------- */
+.model-stage{width:min(360px,82vw); aspect-ratio:300/360; border-radius:26px; background:var(--stage-grad);
+  border:1px solid var(--line); box-shadow:var(--shadow); position:relative; overflow:hidden}
+.hero-model{width:100%; height:100%; display:block; background:transparent; --poster-color:transparent;
+  cursor:grab; touch-action:pan-y}
+.hero-model:active{cursor:grabbing}
+/* Fallback: a real jersey graphic sits behind the model so the hero is never
+   empty. If the GLB (or the model-viewer CDN) can't load, the "unavailable"
+   note is revealed too. Once a model loads, the whole fallback is hidden. */
+.model-fallback{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; text-align:center; padding:18px; background:var(--stage-grad)}
+.model-fallback svg{width:62%; height:auto; opacity:.95}
+.mf-text{display:none; font-family:"Outfit"; font-weight:600; font-size:.82rem; color:var(--fg-faint); max-width:24ch}
+.model-stage.model-ok .model-fallback{display:none}
+.model-stage.model-failed .model-fallback{display:flex}
+.model-stage.model-failed .mf-text{display:block}
+.swatches{display:flex; gap:.6rem; align-items:center}
+.dot{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); cursor:pointer; padding:0;
+  position:relative; transition:transform .12s}
+.dot:hover{transform:scale(1.08)}
+.dot[aria-pressed="true"]{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset}
+
+/* ---------- Section heading ---------- */
+.sec-head{display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; margin:0 0 20px}
+.sec-head h2{font-size:clamp(1.5rem,3.4vw,2.1rem)}
+.sec-head p{color:var(--fg-soft); margin-top:.3rem; max-width:52ch}
+.section{margin-top:56px}
+
+/* ---------- Category chips ---------- */
+.chips{display:flex; gap:.5rem; flex-wrap:wrap; margin-bottom:22px}
+.chip{border:1px solid var(--line); background:var(--surface); color:var(--fg-soft); border-radius:999px;
+  padding:.5rem 1rem; font-family:"Outfit"; font-weight:600; font-size:.9rem; cursor:pointer; transition:all .18s}
+.chip:hover{color:var(--fg)}
+.chip.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+
+/* ---------- Product grid ---------- */
+.grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:20px}
+.product{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden;
+  display:flex; flex-direction:column; box-shadow:var(--shadow-sm); transition:transform .15s, box-shadow .2s}
+.product:hover{transform:translateY(-3px); box-shadow:var(--shadow)}
+.p-media{position:relative; aspect-ratio:1/1; display:grid; place-items:center; background:var(--stage-grad); cursor:pointer}
+.p-media svg{width:66%; height:auto}
+.p-badge{position:absolute; top:10px; left:10px; background:var(--sale); color:#fff; font-family:"Outfit";
+  font-weight:700; font-size:.68rem; letter-spacing:.06em; padding:.25rem .5rem; border-radius:7px}
+.p-tag{position:absolute; top:10px; right:10px; background:var(--surface); color:var(--fg-faint); border:1px solid var(--line);
+  font-size:.62rem; font-weight:600; padding:.2rem .45rem; border-radius:6px; letter-spacing:.04em}
+.p-body{padding:14px 15px 16px; display:flex; flex-direction:column; gap:.2rem; flex:1}
+.p-cat{font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--fg-faint); font-weight:600}
+.p-name{font-family:"Outfit"; font-weight:700; font-size:1.02rem}
+.p-price{margin-top:.1rem; font-weight:700; color:var(--fg)}
+.p-price .was{color:var(--fg-faint); text-decoration:line-through; font-weight:500; margin-right:.4rem}
+.p-price .mock{font-size:.68rem; color:var(--fg-faint); font-weight:600; margin-left:.3rem}
+.p-actions{margin-top:12px; display:flex; gap:.5rem}
+.p-actions .btn{flex:1}
+
+/* ---------- Customizer ---------- */
+.customizer{display:grid; grid-template-columns:1fr 1fr; gap:34px; align-items:start}
+.cz-controls{display:flex; flex-direction:column; gap:20px}
+.field label{display:block; font-family:"Outfit"; font-weight:600; font-size:.82rem; margin-bottom:.4rem; color:var(--fg-soft)}
+.field input, .field select{width:100%; padding:.7rem .85rem; border-radius:12px; border:1px solid var(--line);
+  background:var(--surface); color:var(--fg); font-family:inherit; font-size:1rem}
+.seg{display:flex; gap:.4rem; flex-wrap:wrap}
+.seg button{flex:1; min-width:52px; padding:.6rem 0; border-radius:10px; border:1px solid var(--line);
+  background:var(--surface); color:var(--fg-soft); font-family:"Outfit"; font-weight:700; cursor:pointer; transition:all .15s}
+.seg button.active{background:var(--accent); color:var(--accent-ink); border-color:var(--accent)}
+.row2{display:grid; grid-template-columns:1fr 100px; gap:14px}
+.cz-card{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px; box-shadow:var(--shadow-sm)}
+
+/* ---------- Team kits / bulk ---------- */
+.kit-hero{background:linear-gradient(135deg, var(--accent-soft), transparent); border:1px solid var(--line);
+  border-radius:24px; padding:30px; display:grid; grid-template-columns:1.2fr 1fr; gap:28px; align-items:center}
+.tiers{display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:4px}
+.tier{border:1px solid var(--line); border-radius:var(--radius-sm); padding:16px; background:var(--surface); cursor:pointer; transition:all .15s; text-align:left}
+.tier.active{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft)}
+.tier b{font-family:"Outfit"; font-size:1.3rem; display:block}
+.tier span{font-size:.78rem; color:var(--fg-faint)}
+.logo-drop{border:2px dashed var(--line); border-radius:var(--radius-sm); padding:20px; text-align:center;
+  background:var(--surface); cursor:pointer; transition:border-color .2s}
+.logo-drop:hover{border-color:var(--accent)}
+.logo-drop img{width:72px; height:72px; object-fit:contain; border-radius:10px}
+.logo-drop input{display:none}
+
+/* ---------- Hub ---------- */
+.hub-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:20px}
+.post{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow-sm);
+  display:flex; flex-direction:column}
+.post-top{aspect-ratio:16/9; background:var(--stage-grad); display:grid; place-items:center; position:relative}
+.post-top .k{font-family:"Anton"; font-size:2.4rem; letter-spacing:.02em; color:var(--accent); opacity:.85}
+.post-tag{position:absolute; top:10px; left:10px; background:var(--surface); border:1px solid var(--line); border-radius:7px;
+  font-family:"Outfit"; font-weight:700; font-size:.66rem; letter-spacing:.06em; padding:.25rem .5rem; text-transform:uppercase}
+.post-body{padding:16px; display:flex; flex-direction:column; gap:.4rem; flex:1}
+.post-body h3{font-size:1.05rem}
+.post-date{font-size:.74rem; color:var(--fg-faint); font-weight:600}
+.ig-cta{display:flex; align-items:center; gap:.9rem; margin-top:26px; padding:18px 20px; border:1px solid var(--line);
+  border-radius:var(--radius); background:var(--card); box-shadow:var(--shadow-sm); flex-wrap:wrap}
+.ig-badge{width:46px; height:46px; border-radius:13px; display:grid; place-items:center; color:#fff;
+  background:linear-gradient(45deg,#f09433,#e6683c 25%,#dc2743 50%,#cc2366 75%,#bc1888)}
+
+/* ---------- Cart drawer ---------- */
+.scrim{position:fixed; inset:0; background:var(--scrim); z-index:80; opacity:0; pointer-events:none; transition:opacity .25s}
+.scrim.open{opacity:1; pointer-events:auto}
+.drawer{position:fixed; top:0; right:0; height:100%; width:min(420px,100%); z-index:90; background:var(--drawer-bg);
+  backdrop-filter:var(--nav-blur); -webkit-backdrop-filter:var(--nav-blur);
+  border-left:1px solid var(--line); box-shadow:-20px 0 60px rgba(0,0,0,.2);
+  transform:translateX(100%); transition:transform .3s cubic-bezier(.4,0,.1,1); display:flex; flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-right:env(safe-area-inset-right,0px)}
+.drawer.open{transform:none}
+.drawer-head{display:flex; align-items:center; justify-content:space-between; padding:20px; border-bottom:1px solid var(--line)}
+.drawer-head h3{font-family:"Outfit"; font-size:1.2rem}
+.drawer-body{flex:1; overflow-y:auto; padding:8px 20px}
+.citem{display:grid; grid-template-columns:58px 1fr auto; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); align-items:center}
+.citem .thumb{width:58px; height:58px; border-radius:10px; background:var(--stage-grad); display:grid; place-items:center; border:1px solid var(--line)}
+.citem .thumb svg{width:74%}
+.citem .ci-name{font-family:"Outfit"; font-weight:700; font-size:.95rem}
+.citem .ci-meta{font-size:.76rem; color:var(--fg-faint)}
+.qty{display:inline-flex; align-items:center; gap:.5rem; margin-top:.3rem}
+.qty button{width:24px; height:24px; border-radius:7px; border:1px solid var(--line); background:var(--surface); color:var(--fg); cursor:pointer; font-weight:700; line-height:1}
+.ci-price{font-weight:700; text-align:right}
+.ci-remove{background:none; border:0; color:var(--fg-faint); cursor:pointer; font-size:.74rem; margin-top:.3rem; padding:0}
+.ci-remove:hover{color:var(--sale)}
+.cart-empty{text-align:center; color:var(--fg-faint); padding:50px 10px}
+.drawer-foot{padding:18px 20px; border-top:1px solid var(--line); display:flex; flex-direction:column; gap:12px}
+.subtotal{display:flex; justify-content:space-between; font-family:"Outfit"; font-weight:700; font-size:1.1rem}
+.subtotal .mock{font-size:.7rem; color:var(--fg-faint); font-weight:600}
+
+/* ---------- Checkout ---------- */
+.checkout{display:grid; grid-template-columns:1.3fr 1fr; gap:30px; align-items:start}
+.co-form{display:flex; flex-direction:column; gap:16px}
+.co-summary{background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:22px; box-shadow:var(--shadow-sm); position:sticky; top:90px}
+.co-line{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--line); font-size:.92rem}
+.co-line:last-of-type{border-bottom:0}
+.done-card{max-width:520px; margin:40px auto; text-align:center; background:var(--card); border:1px solid var(--line);
+  border-radius:24px; padding:44px 30px; box-shadow:var(--shadow)}
+.done-check{width:68px; height:68px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; margin:0 auto 18px}
+.done-check svg{width:34px;height:34px}
+
+/* ---------- Footer / mockup ribbon ---------- */
+.mock-ribbon{display:inline-flex; align-items:center; gap:.4rem; background:var(--accent-soft); color:var(--accent);
+  border:1px solid var(--accent); font-family:"Outfit"; font-weight:700; font-size:.72rem; letter-spacing:.04em;
+  padding:.3rem .7rem; border-radius:999px}
+.site-foot{border-top:1px solid var(--line); background:var(--surface); margin-top:40px}
+.foot-inner{padding-block:40px; display:grid; grid-template-columns:1.4fr 1fr 1fr; gap:28px}
+.foot-inner h4{font-family:"Outfit"; font-size:.8rem; text-transform:uppercase; letter-spacing:.12em; color:var(--fg-faint); margin:0 0 .7rem}
+.foot-col a{display:block; color:var(--fg-soft); text-decoration:none; padding:.2rem 0; cursor:pointer; font-size:.92rem; background:none; border:0; font-family:inherit; text-align:left}
+.foot-col a:hover{color:var(--accent)}
+.foot-bottom{border-top:1px solid var(--line); padding-block:18px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:center; font-size:.82rem; color:var(--fg-faint)}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%) translateY(20px);
+  background:var(--fg); color:var(--bg); padding:.8rem 1.2rem; border-radius:999px; font-family:"Outfit"; font-weight:600;
+  font-size:.9rem; box-shadow:var(--shadow); z-index:120; opacity:0; pointer-events:none; transition:opacity .25s, transform .25s}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+/* ---------- Responsive ---------- */
+@media (max-width:900px){
+  .hero,.customizer,.checkout,.kit-hero{grid-template-columns:1fr}
+  .hero{gap:20px}
+  .co-summary{position:static}
+  .foot-inner{grid-template-columns:1fr 1fr}
+}
+@media (max-width:720px){
+  .nav-links{display:none; position:absolute; top:62px; left:0; right:0; flex-direction:column; gap:0;
+    background:var(--bg); backdrop-filter:var(--nav-blur); -webkit-backdrop-filter:var(--nav-blur);
+    border-bottom:1px solid var(--line); box-shadow:var(--shadow); margin-left:0; padding:8px max(18px,env(safe-area-inset-left,0px))}
+  .nav-links.open{display:flex}
+  .nav-links button{padding:.8rem .2rem; font-size:1rem; width:100%; text-align:left; border-bottom:1px solid var(--line)}
+  .nav-links button:last-child{border-bottom:0}
+  .hamburger{display:grid}
+  .tiers{grid-template-columns:1fr}
+  .foot-inner{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- ===== Deal banner (always on, above nav) ===== -->
+<button class="deal" id="dealBanner" aria-label="Season sale">
+  <span class="bolt">⚡</span>
+  <span data-i18n="deal"></span>
+  <span class="chev">→</span>
+</button>
+
+<!-- ===== Nav ===== -->
+<header class="nav">
+  <div class="wrap nav-inner">
+    <button class="brand" data-nav="home" aria-label="Jerseys Barato home">Jerseys&nbsp;<b>Barato</b></button>
+    <nav class="nav-links" id="navLinks" aria-label="Primary">
+      <button data-nav="home" data-i18n="nav_home"></button>
+      <button data-nav="soccer" data-i18n="nav_soccer"></button>
+      <button data-nav="basketball" data-i18n="nav_basketball"></button>
+      <button data-nav="football" data-i18n="nav_football"></button>
+      <button data-nav="kits" data-i18n="nav_kits"></button>
+      <button data-nav="hub" data-i18n="nav_hub"></button>
+    </nav>
+    <div class="nav-tools">
+      <button class="icon-btn lang-btn" id="langBtn" aria-label="Toggle language">
+        <span class="en on">EN</span><span class="faint">/</span><span class="es">ES</span>
+      </button>
+      <button class="icon-btn" id="themeBtn" aria-label="Switch theme" title="Light / Dark / Glass">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+      </button>
+      <button class="icon-btn" id="cartBtn" aria-label="Open cart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"></path></svg>
+        <span class="cart-count" id="cartCount" data-empty="true">0</span>
+      </button>
+      <button class="icon-btn hamburger" id="hamburger" aria-label="Menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="app"></main>
+
+<!-- ===== Footer ===== -->
+<footer class="site-foot">
+  <div class="wrap">
+    <div class="foot-inner">
+      <div class="foot-col">
+        <div class="brand" style="cursor:default; font-size:1.2rem; margin-bottom:.6rem">Jerseys&nbsp;<b>Barato</b></div>
+        <p class="muted" data-i18n="foot_tag" style="max-width:34ch; font-size:.9rem"></p>
+        <div style="margin-top:14px"><span class="mock-ribbon">● <span data-i18n="mock_ribbon"></span></span></div>
+      </div>
+      <div class="foot-col">
+        <h4 data-i18n="foot_shop"></h4>
+        <a data-nav="soccer" data-i18n="nav_soccer"></a>
+        <a data-nav="basketball" data-i18n="nav_basketball"></a>
+        <a data-nav="football" data-i18n="nav_football"></a>
+        <a data-nav="kits" data-i18n="nav_kits"></a>
+        <a data-nav="sale" data-i18n="foot_sale"></a>
+      </div>
+      <div class="foot-col">
+        <h4 data-i18n="foot_more"></h4>
+        <a data-nav="hub" data-i18n="nav_hub"></a>
+        <a data-nav="customizer" data-i18n="foot_custom"></a>
+        <a href="https://instagram.com/jerseys_barato" target="_blank" rel="noopener">Instagram · @jerseys_barato</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Jerseys Barato · <span data-i18n="foot_rights"></span></span>
+      <span data-i18n="foot_made"></span>
+    </div>
+  </div>
+</footer>
+
+<!-- ===== Cart drawer ===== -->
+<div class="scrim" id="scrim"></div>
+<aside class="drawer" id="drawer" aria-label="Shopping cart" aria-hidden="true">
+  <div class="drawer-head">
+    <h3 data-i18n="cart_title"></h3>
+    <button class="icon-btn" id="closeCart" aria-label="Close cart">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"></path></svg>
+    </button>
+  </div>
+  <div class="drawer-body" id="cartBody"></div>
+  <div class="drawer-foot" id="cartFoot"></div>
+</aside>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   i18n dictionary (EN / ES — es-MX register)
+   ============================================================ */
+const I18N = {
+  en:{
+    deal:"Season Sale — up to 40% off · Shop the drop",
+    nav_home:"Home", nav_soccer:"Soccer", nav_basketball:"Basketball", nav_football:"Football",
+    nav_kits:"Custom Kits", nav_hub:"Hub",
+    hero_eyebrow:"New season · New sports",
+    hero_title:"Kits that hit, prices that don't.",
+    hero_lede:"Soccer, basketball and football jerseys — plus custom team kits for your Sunday league. Spin it, color it, make it yours.",
+    hero_cta1:"Shop jerseys", hero_cta2:"Build your kit",
+    stat_designs:"Designs", stat_sports:"Sports", stat_teams:"Teams kitted",
+    spin_hint:"Drag to spin 360°",
+    hero_hint:"Drag to rotate · real 3D",
+    model_unavailable:"3D preview unavailable — check your connection",
+    colorways:"Colorways",
+    home_pop_title:"Popular right now", home_pop_sub:"A quick look across every sport. Tap a jersey to customize it.",
+    home_cat_title:"Shop by sport", home_cat_sub:"Three sports now — soccer's where we started, basketball and football are new.",
+    cat_soccer_d:"League, retro and keeper kits.",
+    cat_basketball_d:"City, classic and hardwood looks.",
+    cat_football_d:"Gridiron home, away and throwbacks.",
+    cat_kits_d:"Bulk team kits — our specialty.",
+    view_all:"View all",
+    soccer_title:"Soccer", soccer_sub:"Where Jerseys Barato started. League kits, retros and keeper jerseys.",
+    basketball_title:"Basketball", basketball_sub:"New for this season — city editions, classics and hardwood retros.",
+    football_title:"American Football", football_sub:"New for this season — gridiron home, away and throwback jerseys.",
+    sale_title:"Season Sale", sale_sub:"Up to 40% off selected kits across every sport. While stock lasts (mock).",
+    add_cart:"Add to cart", customize:"Customize", added:"Added to cart",
+    cz_title:"Customizer", cz_sub:"Pick a color and size, then type a name and number — watch it land on the kit live.",
+    cz_color:"Color", cz_size:"Size", cz_name:"Name on back", cz_number:"Number",
+    cz_name_ph:"CHÁVEZ", cz_base:"Base jersey", cz_add:"Add custom jersey — $55 (mock)",
+    kits_title:"Custom Team Kits", kits_sub:"The money-maker. Full sets for Sunday-league and futsal teams — your logo, your colors, bulk pricing.",
+    kits_eyebrow:"Bulk · Teams · Leagues",
+    kits_lead_title:"Kit the whole squad.",
+    kits_lead_sub:"Upload your crest, name the team, pick a quantity tier. We quote you a bulk price and handle names and numbers for every player.",
+    kit_team:"Team name", kit_team_ph:"Deportivo Barato FC",
+    kit_logo:"Team logo", kit_logo_hint:"Tap to upload a placeholder crest (PNG/SVG)",
+    kit_qty:"Quantity tier", kit_sport:"Sport",
+    tier10_n:"10 kits", tier10_d:"Small squad", tier15_n:"15 kits", tier15_d:"Full roster",
+    tier20_n:"20+ kits", tier20_d:"Club / league",
+    kit_note:"Bulk pricing — contact for a quote. Per-kit price drops as the tier grows.",
+    kit_request:"Request a quote", kit_requested:"Quote request added to cart",
+    hub_title:"The Hub", hub_sub:"More than jerseys. Team news, drops and community updates — we're becoming a content hub.",
+    hub_eyebrow:"News · Drops · Community",
+    ig_title:"Follow the drops on Instagram", ig_sub:"Behind-the-scenes, new kits and giveaways.", ig_cta:"@jerseys_barato",
+    post1_tag:"Drop", post1_t:"Fall league kits are live", post1_d:"The 24/25 league set just dropped across all three sports.",
+    post2_tag:"Team news", post2_t:"Deportivo Barato goes unbeaten", post2_d:"Our sponsored Sunday-league side wrapped the season 12-0.",
+    post3_tag:"Community", post3_t:"Futsal night recap", post3_d:"Thanks to everyone who repped the kit at Friday futsal.",
+    post4_tag:"Social", post4_t:"Customizer of the week", post4_d:"Tag us with your custom jersey for a feature.",
+    date1:"Nov 2, 2026", date2:"Oct 28, 2026", date3:"Oct 21, 2026", date4:"Oct 15, 2026",
+    read:"Read update",
+    cart_title:"Your cart", cart_empty:"Your cart is empty.", cart_empty_cta:"Browse jerseys",
+    subtotal:"Subtotal", checkout:"Checkout", qty:"Qty", remove:"Remove",
+    co_title:"Checkout", co_sub:"Mock checkout — no real payment is taken.",
+    co_contact:"Contact", co_name:"Full name", co_email:"Email",
+    co_ship:"Shipping", co_addr:"Address", co_city:"City", co_zip:"ZIP",
+    co_pay:"Payment (mock)", co_card:"Card number", co_exp:"MM/YY", co_cvc:"CVC",
+    co_place:"Place order", co_summary:"Order summary", co_total:"Total",
+    co_empty:"Add something to your cart first.",
+    done_title:"Order placed!", done_sub:"This is a mock-up, so nothing was charged and nothing ships. Thanks for test-driving Jerseys Barato.",
+    done_cta:"Keep shopping",
+    size_label:"Size", color_label:"Color", number_label:"No.",
+    foot_tag:"Affordable soccer, basketball and football kits — plus custom team sets.",
+    foot_shop:"Shop", foot_more:"More", foot_sale:"Sale", foot_custom:"Customizer",
+    foot_rights:"A mock-up build.", foot_made:"Placeholder imagery & prices.",
+    mock_ribbon:"MOCK-UP — placeholder images & prices"
+  },
+  es:{
+    deal:"Temporada de ofertas — hasta 40% off · Ve el drop",
+    nav_home:"Inicio", nav_soccer:"Futbol", nav_basketball:"Basquet", nav_football:"Americano",
+    nav_kits:"Kits a medida", nav_hub:"Hub",
+    hero_eyebrow:"Nueva temporada · Nuevos deportes",
+    hero_title:"Jerseys que pegan, precios que no.",
+    hero_lede:"Jerseys de futbol, basquet y americano — más kits a medida para tu liga dominguera. Gíralo, dale color, hazlo tuyo.",
+    hero_cta1:"Ver jerseys", hero_cta2:"Arma tu kit",
+    stat_designs:"Diseños", stat_sports:"Deportes", stat_teams:"Equipos vestidos",
+    spin_hint:"Arrastra para girar 360°",
+    hero_hint:"Arrastra para girar · 3D real",
+    model_unavailable:"Vista 3D no disponible — revisa tu conexión",
+    colorways:"Colores",
+    home_pop_title:"Lo más buscado", home_pop_sub:"Un vistazo rápido por todos los deportes. Toca un jersey para personalizarlo.",
+    home_cat_title:"Compra por deporte", home_cat_sub:"Ya son tres deportes — empezamos con futbol; basquet y americano son nuevos.",
+    cat_soccer_d:"Kits de liga, retro y de portero.",
+    cat_basketball_d:"Ediciones city, clásicas y retro.",
+    cat_football_d:"Americano local, visita y throwbacks.",
+    cat_kits_d:"Kits por mayoreo — nuestra especialidad.",
+    view_all:"Ver todo",
+    soccer_title:"Futbol", soccer_sub:"Donde empezó Jerseys Barato. Kits de liga, retros y jerseys de portero.",
+    basketball_title:"Basquet", basketball_sub:"Nuevo esta temporada — ediciones city, clásicas y retro.",
+    football_title:"Futbol Americano", football_sub:"Nuevo esta temporada — jerseys local, visita y throwback.",
+    sale_title:"Ofertas de temporada", sale_sub:"Hasta 40% off en kits seleccionados de todos los deportes. Hasta agotar (mock).",
+    add_cart:"Agregar", customize:"Personalizar", added:"Agregado al carrito",
+    cz_title:"Personalizador", cz_sub:"Elige color y talla, luego escribe nombre y número — míralo aparecer en el kit al instante.",
+    cz_color:"Color", cz_size:"Talla", cz_name:"Nombre en la espalda", cz_number:"Número",
+    cz_name_ph:"CHÁVEZ", cz_base:"Jersey base", cz_add:"Agregar jersey personalizado — $55 (mock)",
+    kits_title:"Kits a medida para equipos", kits_sub:"El fuerte del negocio. Sets completos para equipos domingueros y de futsal — tu logo, tus colores, precio por mayoreo.",
+    kits_eyebrow:"Mayoreo · Equipos · Ligas",
+    kits_lead_title:"Viste a todo el equipo.",
+    kits_lead_sub:"Sube tu escudo, pon el nombre del equipo y elige el volumen. Te cotizamos por mayoreo y manejamos nombres y números de cada jugador.",
+    kit_team:"Nombre del equipo", kit_team_ph:"Deportivo Barato FC",
+    kit_logo:"Logo del equipo", kit_logo_hint:"Toca para subir un escudo de muestra (PNG/SVG)",
+    kit_qty:"Volumen", kit_sport:"Deporte",
+    tier10_n:"10 kits", tier10_d:"Equipo chico", tier15_n:"15 kits", tier15_d:"Plantilla completa",
+    tier20_n:"20+ kits", tier20_d:"Club / liga",
+    kit_note:"Precio por mayoreo — contáctanos para cotizar. El precio por kit baja conforme sube el volumen.",
+    kit_request:"Pedir cotización", kit_requested:"Cotización agregada al carrito",
+    hub_title:"El Hub", hub_sub:"Más que jerseys. Noticias de equipos, drops y comunidad — nos estamos volviendo un hub de contenido.",
+    hub_eyebrow:"Noticias · Drops · Comunidad",
+    ig_title:"Sigue los drops en Instagram", ig_sub:"Detrás de cámaras, kits nuevos y giveaways.", ig_cta:"@jerseys_barato",
+    post1_tag:"Drop", post1_t:"Ya salieron los kits de liga de otoño", post1_d:"El set de liga 24/25 acaba de salir en los tres deportes.",
+    post2_tag:"Equipos", post2_t:"Deportivo Barato queda invicto", post2_d:"Nuestro equipo dominguero patrocinado cerró la temporada 12-0.",
+    post3_tag:"Comunidad", post3_t:"Resumen de la noche de futsal", post3_d:"Gracias a todos los que portaron el kit en el futsal del viernes.",
+    post4_tag:"Social", post4_t:"Personalización de la semana", post4_d:"Etiquétanos con tu jersey personalizado para salir en el perfil.",
+    date1:"2 nov 2026", date2:"28 oct 2026", date3:"21 oct 2026", date4:"15 oct 2026",
+    read:"Leer más",
+    cart_title:"Tu carrito", cart_empty:"Tu carrito está vacío.", cart_empty_cta:"Ver jerseys",
+    subtotal:"Subtotal", checkout:"Pagar", qty:"Cant.", remove:"Quitar",
+    co_title:"Pago", co_sub:"Pago de muestra — no se cobra nada real.",
+    co_contact:"Contacto", co_name:"Nombre completo", co_email:"Correo",
+    co_ship:"Envío", co_addr:"Dirección", co_city:"Ciudad", co_zip:"C.P.",
+    co_pay:"Pago (mock)", co_card:"Número de tarjeta", co_exp:"MM/AA", co_cvc:"CVC",
+    co_place:"Hacer pedido", co_summary:"Resumen", co_total:"Total",
+    co_empty:"Primero agrega algo al carrito.",
+    done_title:"¡Pedido realizado!", done_sub:"Esto es un mock-up, así que no se cobró nada ni se envía nada. Gracias por probar Jerseys Barato.",
+    done_cta:"Seguir comprando",
+    size_label:"Talla", color_label:"Color", number_label:"No.",
+    foot_tag:"Kits accesibles de futbol, basquet y americano — más sets a medida para equipos.",
+    foot_shop:"Tienda", foot_more:"Más", foot_sale:"Ofertas", foot_custom:"Personalizador",
+    foot_rights:"Una versión mock-up.", foot_made:"Imágenes y precios de muestra.",
+    mock_ribbon:"MOCK-UP — imágenes y precios de muestra"
+  }
+};
+
+/* ============================================================
+   State
+   ============================================================ */
+let lang = (localStorage.getItem('jb_lang')||'en');
+let theme = (localStorage.getItem('jb_theme')||'light');
+let cart = [];
+try{ cart = JSON.parse(localStorage.getItem('jb_cart')||'[]'); }catch(e){ cart=[]; }
+const THEMES = ['light','dark','glass'];
+const t = (k)=> (I18N[lang] && I18N[lang][k]) || (I18N.en[k]||k);
+
+/* ---- Colorways (name key, body, sleeve, trim, number color) ---- */
+const COLORWAYS = [
+  {id:'verde', body:'#0f7a46', sleeve:'#0a5a33', trim:'#f4f4f2', num:'#ffffff'},
+  {id:'negro', body:'#17191c', sleeve:'#0c0d0f', trim:'#caa24a', num:'#caa24a'},
+  {id:'azul',  body:'#1f4fd0', sleeve:'#17379a', trim:'#ffffff', num:'#ffffff'}
+];
+
+/* ---- Hero 3D models: real Higgsfield GLB meshes, one per colorway dot.
+   `dot` is the swatch color chosen to match each jersey's primary color. ---- */
+const HERO_BASE = 'https://d8j0ntlcm91z4.cloudfront.net/user_3GuSVNhLzRQElgpwDOtrdgFLHSN/';
+const HERO_MODELS = [
+  {id:'azuloro', label:'Royal blue + gold', dot:'#1f4fd0', dot2:'#caa24a',
+   src:HERO_BASE+'hf_20261105_003342_e8bcecfa-6d4d-40d6-b263-86a710b5b33d.glb'},
+  {id:'negroverde', label:'Black + green', dot:'#17191c', dot2:'#0f7a46',
+   src:HERO_BASE+'hf_20261105_003337_0236bc3b-afc2-4d21-9521-f2d1546c1799.glb'},
+  {id:'rojoblanco', label:'Red + white', dot:'#d22a2a', dot2:'#ffffff',
+   src:HERO_BASE+'hf_20261105_002326_cf955fcd-e506-4904-8134-75e360066356.glb'}
+];
+let heroModelIdx = 0; // persists selected colorway across re-renders (lang switch)
+
+/* ---- Product catalog (placeholder) ---- */
+const PRODUCTS = [
+  {id:'sc1', cat:'soccer', nameEN:'League Home 24/25', nameES:'Local Liga 24/25', price:45, was:68, sale:true, cw:0},
+  {id:'sc2', cat:'soccer', nameEN:'League Away 24/25', nameES:'Visita Liga 24/25', price:45, cw:2},
+  {id:'sc3', cat:'soccer', nameEN:"Retro '98", nameES:"Retro '98", price:52, cw:1},
+  {id:'sc4', cat:'soccer', nameEN:'Keeper Pro', nameES:'Portero Pro', price:48, cw:0},
+  {id:'bk1', cat:'basketball', nameEN:'City Edition', nameES:'Edición City', price:50, was:72, sale:true, cw:1},
+  {id:'bk2', cat:'basketball', nameEN:'Classic Home', nameES:'Clásico Local', price:46, cw:2},
+  {id:'bk3', cat:'basketball', nameEN:'Hardwood Retro', nameES:'Retro Hardwood', price:54, cw:0},
+  {id:'fb1', cat:'football', nameEN:'Gridiron Home', nameES:'Gridiron Local', price:58, cw:2},
+  {id:'fb2', cat:'football', nameEN:'Away Blitz', nameES:'Blitz Visita', price:58, was:84, sale:true, cw:0},
+  {id:'fb3', cat:'football', nameEN:'Throwback 85', nameES:'Throwback 85', price:62, cw:1}
+];
+const CATS = {
+  soccer:{title:'soccer_title', sub:'soccer_sub'},
+  basketball:{title:'basketball_title', sub:'basketball_sub'},
+  football:{title:'football_title', sub:'football_sub'}
+};
+const pname = (p)=> lang==='es'? p.nameES : p.nameEN;
+
+/* ============================================================
+   Jersey component (CSS-3D extruded, drag to spin 360°)
+   ============================================================ */
+function jerseySVG(cw, opts={}){
+  const c = COLORWAYS[cw] || COLORWAYS[0];
+  const back = !!opts.back;
+  const silhouette = !!opts.silhouette;
+  const name = (opts.name||'').toUpperCase();
+  const number = (opts.number||'').toString();
+  const body = silhouette ? c.sleeve : c.body;
+  // shared jersey silhouette paths
+  const sleeves = silhouette ? '' : `
+    <path d="M100,72 L68,128 L92,140 L116,92 Z" fill="${c.sleeve}"/>
+    <path d="M200,72 L232,128 L208,140 L184,92 Z" fill="${c.sleeve}"/>
+    <path d="M94,135 L90,150 L116,150 L118,120 Z" fill="${c.trim}" opacity=".9"/>
+    <path d="M206,135 L210,150 L184,150 L182,120 Z" fill="${c.trim}" opacity=".9"/>`;
+  const bodyPath = `<path d="M100,72 L135,66 Q150,80 165,66 L200,72 L204,150 L208,300 Q208,322 186,326 Q150,334 114,326 Q92,322 92,300 L96,150 Z" fill="${body}"/>`;
+  const hem = silhouette ? '' : `<rect x="92" y="300" width="116" height="10" fill="${c.trim}" opacity=".85"/>`;
+  let detail = '';
+  if(!silhouette){
+    if(back){
+      detail = `
+        <text x="150" y="120" text-anchor="middle" font-family="Anton, sans-serif" font-size="20" letter-spacing="1" fill="${c.num}">${escapeXML(name||'')}</text>
+        <text x="150" y="235" text-anchor="middle" font-family="Anton, sans-serif" font-size="110" fill="${c.num}">${escapeXML(number||'')}</text>`;
+    } else {
+      // front: collar trim + small crest
+      detail = `
+        <path d="M135,66 Q150,86 165,66" fill="none" stroke="${c.trim}" stroke-width="5"/>
+        <circle cx="120" cy="120" r="12" fill="none" stroke="${c.trim}" stroke-width="3"/>
+        <path d="M120,112 l0,16 M112,120 l16,0" stroke="${c.trim}" stroke-width="2.5"/>`;
+    }
+  }
+  return `<svg viewBox="0 0 300 360" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    ${bodyPath}${sleeves}${hem}${detail}
+  </svg>`;
+}
+function escapeXML(s){return String(s).replace(/[<>&'"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;',"'":'&#39;','"':'&quot;'}[c]));}
+
+class Jersey{
+  constructor(el, opts){
+    this.el = el; this.cw = opts.cw||0; this.name=opts.name||''; this.number=opts.number||'';
+    this.angle = -18; this.draggable = opts.draggable!==false;
+    this.render(); if(this.draggable) this.bindDrag();
+  }
+  render(){
+    const depth = 46, layers = 7;
+    let slabs = '';
+    for(let i=0;i<layers;i++){
+      const z = -depth/2 + (depth)*(i/(layers-1));
+      slabs += `<div class="layer" style="transform:translateZ(${z}px)">${jerseySVG(this.cw,{silhouette:true})}</div>`;
+    }
+    this.el.classList.add('stage');
+    this.el.innerHTML = `<div class="rot">
+      ${slabs}
+      <div class="layer detail" style="transform:translateZ(${depth/2+0.5}px)">${jerseySVG(this.cw,{back:false})}</div>
+      <div class="layer detail" style="transform:rotateY(180deg) translateZ(${depth/2+0.5}px)">${jerseySVG(this.cw,{back:true,name:this.name,number:this.number})}</div>
+    </div>`;
+    this.rot = this.el.querySelector('.rot');
+    this.apply();
+  }
+  apply(){ this.rot.style.transform = `rotateY(${this.angle}deg)`; }
+  setColor(cw){ this.cw=cw; this.render(); }
+  setText(name,number){ this.name=name; this.number=number; this.render(); }
+  bindDrag(){
+    let startX=0, startAngle=0, dragging=false;
+    const down = (e)=>{ dragging=true; this.el.classList.add('dragging'); startX=(e.touches?e.touches[0].clientX:e.clientX); startAngle=this.angle; e.preventDefault(); };
+    const move = (e)=>{ if(!dragging) return; const x=(e.touches?e.touches[0].clientX:e.clientX); this.angle=startAngle+(x-startX)*0.6; this.apply(); };
+    const up = ()=>{ dragging=false; this.el.classList.remove('dragging'); };
+    this.el.addEventListener('mousedown',down); window.addEventListener('mousemove',move); window.addEventListener('mouseup',up);
+    this.el.addEventListener('touchstart',down,{passive:false}); this.el.addEventListener('touchmove',move,{passive:false}); this.el.addEventListener('touchend',up);
+  }
+}
+
+/* ============================================================
+   Views
+   ============================================================ */
+const app = document.getElementById('app');
+let czJersey=null, kitJersey=null;
+let czState = {cw:0, size:'M', name:'', number:'10'};
+let kitState = {tier:'15', sport:'soccer', team:'', logo:null};
+
+function productCardHTML(p){
+  const priceBlock = p.sale
+    ? `<span class="was tnum">$${p.was}</span><span class="tnum">$${p.price}</span><span class="mock">(mock)</span>`
+    : `<span class="tnum">$${p.price}</span><span class="mock">(mock)</span>`;
+  return `<article class="product" data-id="${p.id}">
+    <div class="p-media" data-customize="${p.id}">
+      ${jerseySVG(p.cw,{back:false})}
+      ${p.sale?`<span class="p-badge">SALE</span>`:''}
+      <span class="p-tag">PLACEHOLDER</span>
+    </div>
+    <div class="p-body">
+      <span class="p-cat">${t('nav_'+p.cat)}</span>
+      <span class="p-name">${pname(p)}</span>
+      <span class="p-price">${priceBlock}</span>
+      <div class="p-actions">
+        <button class="btn btn-primary btn-sm" data-add="${p.id}">${t('add_cart')}</button>
+        <button class="btn btn-ghost btn-sm" data-customize="${p.id}">${t('customize')}</button>
+      </div>
+    </div>
+  </article>`;
+}
+
+function renderHome(){
+  const pop = PRODUCTS.filter(p=>['sc1','bk1','fb2','sc3'].includes(p.id));
+  app.innerHTML = `
+  <section class="view wrap">
+    <div class="hero">
+      <div class="hero-copy">
+        <span class="eyebrow" data-i18n="hero_eyebrow"></span>
+        <h1 data-i18n="hero_title" style="margin-top:.6rem"></h1>
+        <p class="lede" data-i18n="hero_lede"></p>
+        <div class="hero-cta">
+          <button class="btn btn-primary" data-nav="soccer" data-i18n="hero_cta1"></button>
+          <button class="btn btn-ghost" data-nav="customizer" data-i18n="hero_cta2"></button>
+        </div>
+        <div class="hero-stats">
+          <div class="s"><b class="tnum">120+</b><span data-i18n="stat_designs"></span></div>
+          <div class="s"><b class="tnum">3</b><span data-i18n="stat_sports"></span></div>
+          <div class="s"><b class="tnum">40+</b><span data-i18n="stat_teams"></span></div>
+        </div>
+      </div>
+      <div class="stage-wrap">
+        <div class="model-stage" id="heroStage">
+          <model-viewer id="heroModel" class="hero-model"
+            src="${HERO_MODELS[heroModelIdx].src}"
+            alt="Draggable 3D jersey — ${HERO_MODELS[heroModelIdx].label}"
+            camera-controls touch-action="pan-y" auto-rotate interaction-prompt="auto"
+            shadow-intensity="1" exposure="1.05"
+            camera-orbit="0deg 78deg 2.4m" min-camera-orbit="auto 0deg auto"
+            max-camera-orbit="auto 180deg auto" field-of-view="30deg"
+            environment-image="neutral" loading="eager" reveal="auto"></model-viewer>
+          <div class="model-fallback" id="heroFallback" aria-hidden="true">
+            ${jerseySVG(0,{back:false})}
+            <span class="mf-text" data-i18n="model_unavailable"></span>
+          </div>
+        </div>
+        <div class="spin-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v5h-5"></path></svg><span data-i18n="hero_hint"></span></div>
+        <div class="swatches" role="group" aria-label="Colorways">
+          ${HERO_MODELS.map((m,i)=>`<button class="dot" data-cw="${i}" aria-pressed="${i===heroModelIdx}" style="background:${m.dot}; box-shadow:inset 0 0 0 7px ${m.dot}, inset 0 0 0 9px ${m.dot2}" title="${m.label}" aria-label="${m.label}"></button>`).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><div><h2 data-i18n="home_pop_title"></h2><p data-i18n="home_pop_sub"></p></div>
+        <button class="btn btn-ghost btn-sm" data-nav="soccer" data-i18n="view_all"></button></div>
+      <div class="grid">${pop.map(productCardHTML).join('')}</div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head"><div><h2 data-i18n="home_cat_title"></h2><p data-i18n="home_cat_sub"></p></div></div>
+      <div class="grid">
+        ${catCardHTML('soccer','cat_soccer_d',0)}
+        ${catCardHTML('basketball','cat_basketball_d',1)}
+        ${catCardHTML('football','cat_football_d',2)}
+        ${catCardHTML('kits','cat_kits_d',0,true)}
+      </div>
+    </div>
+  </section>`;
+  afterRender();
+  wireHeroModel();
+}
+
+/* Wire the real 3D GLB jersey (model-viewer) + colorway switching + fallback */
+function wireHeroModel(){
+  const stage = document.getElementById('heroStage');
+  const mv = document.getElementById('heroModel');
+  if(!stage || !mv) return;
+
+  const markOk = ()=>{ stage.classList.add('model-ok'); stage.classList.remove('model-failed'); };
+  const markFail = ()=>{ stage.classList.add('model-failed'); stage.classList.remove('model-ok'); };
+
+  let settleTimer = null;
+  const resetState = ()=>{
+    stage.classList.remove('model-ok','model-failed');
+    clearTimeout(settleTimer);
+    // If model-viewer never upgrades (CDN blocked) or the GLB stalls, reveal
+    // the "unavailable" note so the hero explains itself instead of stalling.
+    settleTimer = setTimeout(()=>{
+      if(!stage.classList.contains('model-ok')) markFail();
+    }, 9000);
+  };
+
+  mv.addEventListener('load', ()=>{ clearTimeout(settleTimer); markOk(); });
+  mv.addEventListener('error', ()=>{ clearTimeout(settleTimer); markFail(); });
+  resetState();
+
+  document.querySelectorAll('.stage-wrap .dot').forEach(d=>d.addEventListener('click',()=>{
+    const i = +d.dataset.cw;
+    heroModelIdx = i;
+    const m = HERO_MODELS[i];
+    mv.setAttribute('src', m.src);
+    mv.setAttribute('alt', 'Draggable 3D jersey — ' + m.label);
+    resetState();
+    document.querySelectorAll('.stage-wrap .dot').forEach(x=>x.setAttribute('aria-pressed', x===d));
+  }));
+}
+function catCardHTML(cat, descKey, cw, isKit){
+  return `<article class="product" ${isKit?'data-nav="kits"':`data-nav="${cat}"`} style="cursor:pointer">
+    <div class="p-media">${jerseySVG(cw,{back:false})}<span class="p-tag">PLACEHOLDER</span></div>
+    <div class="p-body">
+      <span class="p-name">${t('nav_'+cat)}</span>
+      <span class="muted" style="font-size:.88rem" data-i18n="${descKey}"></span>
+      <div class="p-actions"><button class="btn btn-ghost btn-sm btn-block" ${isKit?'data-nav="kits"':`data-nav="${cat}"`} data-i18n="view_all"></button></div>
+    </div>
+  </article>`;
+}
+
+function renderCategory(cat){
+  const meta = CATS[cat];
+  const items = PRODUCTS.filter(p=>p.cat===cat);
+  app.innerHTML = `<section class="view wrap">
+    <div class="sec-head"><div><span class="eyebrow">${t('nav_'+cat)}</span><h2 data-i18n="${meta.title}" style="margin-top:.4rem"></h2><p data-i18n="${meta.sub}"></p></div></div>
+    <div class="grid">${items.map(productCardHTML).join('')}</div>
+  </section>`;
+  afterRender();
+}
+
+function renderSale(){
+  const items = PRODUCTS.filter(p=>p.sale);
+  app.innerHTML = `<section class="view wrap">
+    <div class="sec-head"><div><span class="eyebrow">⚡ SALE</span><h2 data-i18n="sale_title" style="margin-top:.4rem"></h2><p data-i18n="sale_sub"></p></div></div>
+    <div class="grid">${items.map(productCardHTML).join('')}</div>
+  </section>`;
+  afterRender();
+}
+
+function renderCustomizer(){
+  app.innerHTML = `<section class="view wrap">
+    <div class="sec-head"><div><span class="eyebrow" data-i18n="cz_title"></span><h2 data-i18n="cz_title" style="margin-top:.4rem"></h2><p data-i18n="cz_sub"></p></div></div>
+    <div class="customizer">
+      <div class="stage-wrap">
+        <div id="czStage"></div>
+        <div class="spin-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v5h-5"></path></svg><span data-i18n="spin_hint"></span></div>
+        <p class="faint" style="font-size:.78rem">${t('spin_hint')} · <span data-i18n="cz_name"></span></p>
+      </div>
+      <div class="cz-card">
+        <div class="cz-controls">
+          <div class="field">
+            <label data-i18n="cz_color"></label>
+            <div class="swatches" id="czColors" role="group">
+              ${COLORWAYS.map((c,i)=>`<button class="dot" data-cw="${i}" aria-pressed="${i===czState.cw}" style="background:${c.body}" aria-label="Color ${i+1}"></button>`).join('')}
+            </div>
+          </div>
+          <div class="field">
+            <label data-i18n="cz_size"></label>
+            <div class="seg" id="czSize">
+              ${['S','M','L','XL','XXL'].map(s=>`<button data-size="${s}" class="${s===czState.size?'active':''}">${s}</button>`).join('')}
+            </div>
+          </div>
+          <div class="row2">
+            <div class="field"><label data-i18n="cz_name"></label><input id="czName" maxlength="12" placeholder="${t('cz_name_ph')}" value="${czState.name}"></div>
+            <div class="field"><label data-i18n="cz_number"></label><input id="czNumber" maxlength="2" inputmode="numeric" placeholder="10" value="${czState.number}"></div>
+          </div>
+          <button class="btn btn-primary btn-block" id="czAdd" data-i18n="cz_add"></button>
+          <p class="faint" style="font-size:.76rem; text-align:center"><span class="mock-ribbon">● <span data-i18n="mock_ribbon"></span></span></p>
+        </div>
+      </div>
+    </div>
+  </section>`;
+  afterRender();
+  czJersey = new Jersey(document.getElementById('czStage'), {cw:czState.cw, name:czState.name||'BARATO', number:czState.number});
+  czJersey.angle = 160; czJersey.apply(); // start showing the back so name/number are visible
+  app.querySelectorAll('#czColors .dot').forEach(d=>d.addEventListener('click',()=>{
+    czState.cw=+d.dataset.cw; czJersey.setColor(czState.cw); czJersey.apply();
+    app.querySelectorAll('#czColors .dot').forEach(x=>x.setAttribute('aria-pressed',x===d));
+  }));
+  app.querySelectorAll('#czSize button').forEach(b=>b.addEventListener('click',()=>{
+    czState.size=b.dataset.size; app.querySelectorAll('#czSize button').forEach(x=>x.classList.toggle('active',x===b));
+  }));
+  const nameI=document.getElementById('czName'), numI=document.getElementById('czNumber');
+  const live=()=>{ czState.name=nameI.value; czState.number=numI.value; const a=czJersey.angle; czJersey.setText(czState.name||'BARATO', czState.number); czJersey.angle=a; czJersey.apply(); };
+  nameI.addEventListener('input',live); numI.addEventListener('input',e=>{ e.target.value=e.target.value.replace(/[^0-9]/g,''); live(); });
+  document.getElementById('czAdd').addEventListener('click',()=>{
+    addToCart({ id:'custom-'+Date.now(), name:(lang==='es'?'Jersey personalizado':'Custom jersey'), price:55, cw:czState.cw,
+      size:czState.size, pname:(czState.name||'—'), number:(czState.number||'—'), custom:true });
+    toast(t('added'));
+  });
+}
+
+function renderKits(){
+  app.innerHTML = `<section class="view wrap">
+    <div class="sec-head"><div><span class="eyebrow" data-i18n="kits_eyebrow"></span><h2 data-i18n="kits_title" style="margin-top:.4rem"></h2><p data-i18n="kits_sub"></p></div></div>
+    <div class="kit-hero">
+      <div>
+        <h2 data-i18n="kits_lead_title" style="font-size:clamp(1.6rem,3.6vw,2.3rem)"></h2>
+        <p class="muted" data-i18n="kits_lead_sub" style="margin-top:.7rem; max-width:48ch"></p>
+        <div style="display:flex; flex-direction:column; gap:16px; margin-top:22px">
+          <div class="field"><label data-i18n="kit_team"></label><input id="kitTeam" placeholder="${t('kit_team_ph')}" value="${kitState.team}"></div>
+          <div class="row2" style="grid-template-columns:1fr 1fr">
+            <div class="field"><label data-i18n="kit_sport"></label>
+              <select id="kitSport">
+                <option value="soccer">${t('nav_soccer')}</option>
+                <option value="basketball">${t('nav_basketball')}</option>
+                <option value="football">${t('nav_football')}</option>
+              </select>
+            </div>
+            <div class="field"><label data-i18n="kit_logo"></label>
+              <label class="logo-drop" id="logoDrop" for="kitLogo">
+                <div id="logoPreview">
+                  <svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.8" style="color:var(--fg-faint)"><path d="M12 16V4M7 9l5-5 5 5"></path><path d="M4 20h16"></path></svg>
+                </div>
+                <span class="faint" style="font-size:.76rem; display:block; margin-top:6px" data-i18n="kit_logo_hint"></span>
+                <input type="file" id="kitLogo" accept="image/*">
+              </label>
+            </div>
+          </div>
+          <div>
+            <label class="field" style="font-family:'Outfit'; font-weight:600; font-size:.82rem; color:var(--fg-soft)" data-i18n="kit_qty"></label>
+            <div class="tiers" id="kitTiers">
+              ${['10','15','20'].map(q=>`<button class="tier ${q===kitState.tier?'active':''}" data-tier="${q}">
+                <b>${t('tier'+q+'_n')}</b><span data-i18n="tier${q}_d"></span></button>`).join('')}
+            </div>
+          </div>
+          <p class="faint" style="font-size:.84rem" data-i18n="kit_note"></p>
+          <button class="btn btn-primary btn-block" id="kitReq" data-i18n="kit_request"></button>
+        </div>
+      </div>
+      <div class="stage-wrap"><div id="kitStage"></div>
+        <span class="mock-ribbon">● <span data-i18n="mock_ribbon"></span></span>
+      </div>
+    </div>
+  </section>`;
+  afterRender();
+  kitJersey = new Jersey(document.getElementById('kitStage'), {cw:0, name:'EQUIPO', number:'00'});
+  document.getElementById('kitSport').value = kitState.sport;
+  app.querySelectorAll('#kitTiers .tier').forEach(b=>b.addEventListener('click',()=>{
+    kitState.tier=b.dataset.tier; app.querySelectorAll('#kitTiers .tier').forEach(x=>x.classList.toggle('active',x===b));
+  }));
+  document.getElementById('kitTeam').addEventListener('input',e=>{kitState.team=e.target.value;});
+  document.getElementById('kitSport').addEventListener('change',e=>{kitState.sport=e.target.value;});
+  document.getElementById('kitLogo').addEventListener('change',e=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader(); r.onload=ev=>{ document.getElementById('logoPreview').innerHTML=`<img src="${ev.target.result}" alt="team logo preview">`; kitState.logo=true; };
+    r.readAsDataURL(f);
+  });
+  document.getElementById('kitReq').addEventListener('click',()=>{
+    const team = kitState.team || (lang==='es'?'Equipo sin nombre':'Unnamed team');
+    addToCart({ id:'kit-'+Date.now(), name:(lang==='es'?'Cotización de kit':'Team kit quote')+' · '+team, price:null, quote:true,
+      cw:0, size:kitState.tier+' kits', pname:t('nav_'+kitState.sport), number:'', custom:true });
+    toast(t('kit_requested'));
+  });
+}
+
+function renderCheckout(){
+  if(cart.length===0){ app.innerHTML=`<section class="view wrap"><div class="done-card"><h2 data-i18n="co_title"></h2><p class="muted" style="margin-top:1rem" data-i18n="co_empty"></p><button class="btn btn-primary" data-nav="soccer" style="margin-top:1.4rem" data-i18n="cart_empty_cta"></button></div></section>`; afterRender(); return; }
+  app.innerHTML = `<section class="view wrap">
+    <div class="sec-head"><div><h2 data-i18n="co_title"></h2><p data-i18n="co_sub"></p></div></div>
+    <div class="checkout">
+      <form class="co-form" id="coForm" novalidate>
+        <div class="cz-card">
+          <h3 style="font-family:'Outfit'; font-size:1rem; margin-bottom:12px" data-i18n="co_contact"></h3>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div class="field"><label data-i18n="co_name"></label><input required id="f_name" autocomplete="name"></div>
+            <div class="field"><label data-i18n="co_email"></label><input required type="email" id="f_email" autocomplete="email"></div>
+          </div>
+        </div>
+        <div class="cz-card">
+          <h3 style="font-family:'Outfit'; font-size:1rem; margin-bottom:12px" data-i18n="co_ship"></h3>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div class="field"><label data-i18n="co_addr"></label><input required id="f_addr" autocomplete="street-address"></div>
+            <div class="row2" style="grid-template-columns:1fr 120px">
+              <div class="field"><label data-i18n="co_city"></label><input required id="f_city"></div>
+              <div class="field"><label data-i18n="co_zip"></label><input required id="f_zip" inputmode="numeric"></div>
+            </div>
+          </div>
+        </div>
+        <div class="cz-card">
+          <h3 style="font-family:'Outfit'; font-size:1rem; margin-bottom:12px" data-i18n="co_pay"></h3>
+          <div style="display:flex; flex-direction:column; gap:12px">
+            <div class="field"><label data-i18n="co_card"></label><input id="f_card" placeholder="4242 4242 4242 4242" inputmode="numeric"></div>
+            <div class="row2" style="grid-template-columns:1fr 1fr">
+              <div class="field"><label data-i18n="co_exp"></label><input id="f_exp" placeholder="12/28"></div>
+              <div class="field"><label data-i18n="co_cvc"></label><input id="f_cvc" placeholder="123" inputmode="numeric"></div>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" data-i18n="co_place"></button>
+        <p class="faint" style="text-align:center"><span class="mock-ribbon">● <span data-i18n="mock_ribbon"></span></span></p>
+      </form>
+      <div class="co-summary">
+        <h3 style="font-family:'Outfit'; font-size:1.1rem; margin-bottom:12px" data-i18n="co_summary"></h3>
+        ${cart.map(it=>`<div class="co-line"><span>${cartLabel(it)} ${it.qty>1?'×'+it.qty:''}</span><span class="tnum">${it.price==null?'—':'$'+(it.price*it.qty)}</span></div>`).join('')}
+        <div class="co-line" style="font-family:'Outfit'; font-weight:700; font-size:1.1rem; border-top:2px solid var(--line); margin-top:6px; padding-top:12px">
+          <span data-i18n="co_total"></span><span class="tnum">$${cartTotal()} <span class="faint" style="font-size:.7rem; font-weight:600">(mock)</span></span>
+        </div>
+      </div>
+    </div>
+  </section>`;
+  afterRender();
+  document.getElementById('coForm').addEventListener('submit',e=>{
+    e.preventDefault();
+    const form=e.target;
+    if(!form.checkValidity()){ form.reportValidity(); return; }
+    cart=[]; saveCart(); updateCart();
+    renderDone();
+  });
+}
+function renderDone(){
+  app.innerHTML = `<section class="view wrap"><div class="done-card">
+    <div class="done-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg></div>
+    <h2 data-i18n="done_title"></h2>
+    <p class="muted" style="margin-top:1rem" data-i18n="done_sub"></p>
+    <button class="btn btn-primary" data-nav="home" style="margin-top:1.6rem" data-i18n="done_cta"></button>
+    <div style="margin-top:1.4rem"><span class="mock-ribbon">● <span data-i18n="mock_ribbon"></span></span></div>
+  </div></section>`;
+  afterRender();
+}
+
+/* ============================================================
+   Cart
+   ============================================================ */
+function cartLabel(it){
+  if(it.custom) return it.name + (it.number&&it.number!=='—'&&it.number!==''? ' · '+it.number : '') ;
+  return it.name;
+}
+function cartTotal(){ return cart.reduce((s,it)=> s + (it.price==null?0:it.price*it.qty), 0); }
+function saveCart(){ try{ localStorage.setItem('jb_cart', JSON.stringify(cart)); }catch(e){} }
+function addToCart(item){
+  const key = item.id;
+  const existing = cart.find(c=>c.id===key);
+  if(existing && !item.custom){ existing.qty++; }
+  else { cart.push(Object.assign({qty:1}, item)); }
+  saveCart(); updateCart();
+}
+function addProduct(id){
+  const p = PRODUCTS.find(x=>x.id===id); if(!p) return;
+  addToCart({ id:p.id, name:pname(p), price:p.price, cw:p.cw, size:'M', pname:'', number:'' });
+  toast(t('added'));
+}
+function updateCart(){
+  const n = cart.reduce((s,i)=>s+i.qty,0);
+  const badge=document.getElementById('cartCount');
+  badge.textContent=n; badge.setAttribute('data-empty', n===0);
+  const body=document.getElementById('cartBody'), foot=document.getElementById('cartFoot');
+  if(cart.length===0){
+    body.innerHTML=`<div class="cart-empty"><p>${t('cart_empty')}</p><button class="btn btn-ghost btn-sm" data-nav="soccer" style="margin-top:14px">${t('cart_empty_cta')}</button></div>`;
+    foot.innerHTML='';
+  } else {
+    body.innerHTML = cart.map((it,idx)=>`<div class="citem">
+      <div class="thumb">${jerseySVG(it.cw||0,{back:false})}</div>
+      <div>
+        <div class="ci-name">${cartLabel(it)}</div>
+        <div class="ci-meta">${it.pname?it.pname+' · ':''}${t('size_label')} ${it.size}${(it.number&&!it.quote)?' · '+t('number_label')+' '+it.number:''}</div>
+        ${it.quote?'':`<div class="qty"><button data-dec="${idx}" aria-label="decrease">−</button><span class="tnum">${it.qty}</span><button data-inc="${idx}" aria-label="increase">+</button></div>`}
+        <button class="ci-remove" data-rm="${idx}">${t('remove')}</button>
+      </div>
+      <div class="ci-price tnum">${it.price==null?'<span class="faint" style="font-size:.78rem">'+(lang==='es'?'Cotizar':'Quote')+'</span>':'$'+(it.price*it.qty)}</div>
+    </div>`).join('');
+    foot.innerHTML = `<div class="subtotal"><span data-i18n="subtotal">${t('subtotal')}</span><span class="tnum">$${cartTotal()} <span class="mock">(mock)</span></span></div>
+      <button class="btn btn-primary btn-block" id="goCheckout">${t('checkout')}</button>`;
+    document.getElementById('goCheckout').addEventListener('click',()=>{ closeCart(); navigate('checkout'); });
+  }
+  body.querySelectorAll('[data-nav]').forEach(b=>b.addEventListener('click',()=>{ closeCart(); navigate(b.dataset.nav); }));
+  body.querySelectorAll('[data-rm]').forEach(b=>b.addEventListener('click',()=>{ cart.splice(+b.dataset.rm,1); saveCart(); updateCart(); }));
+  body.querySelectorAll('[data-inc]').forEach(b=>b.addEventListener('click',()=>{ cart[+b.dataset.inc].qty++; saveCart(); updateCart(); }));
+  body.querySelectorAll('[data-dec]').forEach(b=>b.addEventListener('click',()=>{ const i=+b.dataset.dec; cart[i].qty--; if(cart[i].qty<=0)cart.splice(i,1); saveCart(); updateCart(); }));
+}
+function openCart(){ document.getElementById('scrim').classList.add('open'); document.getElementById('drawer').classList.add('open'); document.getElementById('drawer').setAttribute('aria-hidden','false'); }
+function closeCart(){ document.getElementById('scrim').classList.remove('open'); document.getElementById('drawer').classList.remove('open'); document.getElementById('drawer').setAttribute('aria-hidden','true'); }
+
+/* ============================================================
+   Hub
+   ============================================================ */
+function renderHub(){
+  const posts=[1,2,3,4];
+  app.innerHTML=`<section class="view wrap">
+    <div class="sec-head"><div><span class="eyebrow" data-i18n="hub_eyebrow"></span><h2 data-i18n="hub_title" style="margin-top:.4rem"></h2><p data-i18n="hub_sub"></p></div></div>
+    <div class="hub-grid">
+      ${posts.map(i=>`<article class="post">
+        <div class="post-top"><span class="k">JB</span><span class="post-tag" data-i18n="post${i}_tag"></span></div>
+        <div class="post-body">
+          <span class="post-date" data-i18n="date${i}"></span>
+          <h3 data-i18n="post${i}_t"></h3>
+          <p class="muted" style="font-size:.9rem" data-i18n="post${i}_d"></p>
+          <a href="https://instagram.com/jerseys_barato" target="_blank" rel="noopener" style="color:var(--accent); font-weight:600; font-size:.86rem; text-decoration:none; margin-top:auto" data-i18n="read"></a>
+        </div>
+      </article>`).join('')}
+    </div>
+    <a class="ig-cta" href="https://instagram.com/jerseys_barato" target="_blank" rel="noopener" style="text-decoration:none">
+      <span class="ig-badge"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"></rect><circle cx="12" cy="12" r="4"></circle><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"></circle></svg></span>
+      <div style="flex:1; min-width:0"><div style="font-family:'Outfit'; font-weight:700" data-i18n="ig_title"></div><div class="muted" style="font-size:.86rem" data-i18n="ig_sub"></div></div>
+      <span class="btn btn-primary btn-sm" data-i18n="ig_cta"></span>
+    </a>
+  </section>`;
+  afterRender();
+}
+
+/* ============================================================
+   Router / shared
+   ============================================================ */
+const ROUTES = {
+  home:renderHome, soccer:()=>renderCategory('soccer'), basketball:()=>renderCategory('basketball'),
+  football:()=>renderCategory('football'), sale:renderSale, customizer:renderCustomizer,
+  kits:renderKits, hub:renderHub, checkout:renderCheckout
+};
+let current='home';
+function navigate(view){
+  if(!ROUTES[view]) view='home';
+  current=view;
+  (ROUTES[view])();
+  window.scrollTo({top:0, behavior:'instant'in document.documentElement.style?'instant':'auto'});
+  document.querySelectorAll('.nav-links button').forEach(b=>b.classList.toggle('active', b.dataset.nav===view));
+  document.getElementById('navLinks').classList.remove('open');
+}
+function afterRender(){
+  applyI18n(app);
+  app.querySelectorAll('[data-nav]').forEach(b=> b.addEventListener('click',()=> navigate(b.dataset.nav)));
+  app.querySelectorAll('[data-add]').forEach(b=> b.addEventListener('click',(e)=>{ e.stopPropagation(); addProduct(b.dataset.add); }));
+  app.querySelectorAll('[data-customize]').forEach(b=> b.addEventListener('click',(e)=>{ e.stopPropagation(); navigate('customizer'); }));
+}
+function applyI18n(root){
+  (root||document).querySelectorAll('[data-i18n]').forEach(el=>{ el.textContent = t(el.dataset.i18n); });
+}
+
+/* ============================================================
+   Toast
+   ============================================================ */
+let toastTimer=null;
+function toast(msg){
+  const el=document.getElementById('toast'); el.textContent=msg; el.classList.add('show');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>el.classList.remove('show'),1700);
+}
+
+/* ============================================================
+   Theme + language + global controls
+   ============================================================ */
+function applyTheme(){ document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('jb_theme',theme); }
+function cycleTheme(){ theme = THEMES[(THEMES.indexOf(theme)+1)%THEMES.length]; applyTheme(); }
+function applyLangUI(){
+  document.documentElement.setAttribute('lang', lang);
+  document.querySelector('#langBtn .en').classList.toggle('on', lang==='en');
+  document.querySelector('#langBtn .es').classList.toggle('on', lang==='es');
+  applyI18n(document);
+}
+function setLang(l){ lang=l; localStorage.setItem('jb_lang',l); applyLangUI(); (ROUTES[current])(); afterRenderPostLang(); updateCart(); }
+function afterRenderPostLang(){ document.querySelectorAll('.nav-links button').forEach(b=>b.classList.toggle('active', b.dataset.nav===current)); }
+
+document.getElementById('themeBtn').addEventListener('click',cycleTheme);
+document.getElementById('langBtn').addEventListener('click',()=> setLang(lang==='en'?'es':'en'));
+document.getElementById('cartBtn').addEventListener('click',openCart);
+document.getElementById('closeCart').addEventListener('click',closeCart);
+document.getElementById('scrim').addEventListener('click',closeCart);
+document.getElementById('dealBanner').addEventListener('click',()=> navigate('sale'));
+document.getElementById('hamburger').addEventListener('click',()=> document.getElementById('navLinks').classList.toggle('open'));
+document.querySelectorAll('.nav-links button, .brand').forEach(b=> b.addEventListener('click',()=> b.dataset.nav && navigate(b.dataset.nav)));
+document.querySelectorAll('.site-foot [data-nav]').forEach(b=> b.addEventListener('click',()=> navigate(b.dataset.nav)));
+window.addEventListener('keydown',e=>{ if(e.key==='Escape') closeCart(); });
+
+/* ---- Boot ---- */
+applyTheme();
+applyLangUI();
+navigate('home');
+updateCart();
+</script>
+</body>
+</html>
