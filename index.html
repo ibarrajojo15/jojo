@@ -8,6 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Manrope:wght@400;500;600;700&family=Anton&display=swap">
+<!-- Google <model-viewer> web component for real draggable 3D GLB jerseys -->
+<script type="module" src="https://cdn.jsdelivr.net/npm/@google/model-viewer@4.0.0/dist/model-viewer.min.js"></script>
 <style>
 /* ============================================================
    JERSEYS BARATO — storefront mock-up
@@ -207,6 +209,23 @@ button{font-family:inherit}
 .layer.detail{backface-visibility:hidden}
 .spin-hint{display:flex; align-items:center; gap:.5rem; font-family:"Outfit"; font-weight:600; font-size:.82rem; color:var(--fg-faint)}
 .spin-hint svg{width:16px;height:16px}
+
+/* ---------- Hero 3D model-viewer ---------- */
+.model-stage{width:min(360px,82vw); aspect-ratio:300/360; border-radius:26px; background:var(--stage-grad);
+  border:1px solid var(--line); box-shadow:var(--shadow); position:relative; overflow:hidden}
+.hero-model{width:100%; height:100%; display:block; background:transparent; --poster-color:transparent;
+  cursor:grab; touch-action:pan-y}
+.hero-model:active{cursor:grabbing}
+/* Fallback: a real jersey graphic sits behind the model so the hero is never
+   empty. If the GLB (or the model-viewer CDN) can't load, the "unavailable"
+   note is revealed too. Once a model loads, the whole fallback is hidden. */
+.model-fallback{position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:12px; text-align:center; padding:18px; background:var(--stage-grad)}
+.model-fallback svg{width:62%; height:auto; opacity:.95}
+.mf-text{display:none; font-family:"Outfit"; font-weight:600; font-size:.82rem; color:var(--fg-faint); max-width:24ch}
+.model-stage.model-ok .model-fallback{display:none}
+.model-stage.model-failed .model-fallback{display:flex}
+.model-stage.model-failed .mf-text{display:block}
 .swatches{display:flex; gap:.6rem; align-items:center}
 .dot{width:30px; height:30px; border-radius:50%; border:2px solid var(--line); cursor:pointer; padding:0;
   position:relative; transition:transform .12s}
@@ -467,6 +486,8 @@ const I18N = {
     hero_cta1:"Shop jerseys", hero_cta2:"Build your kit",
     stat_designs:"Designs", stat_sports:"Sports", stat_teams:"Teams kitted",
     spin_hint:"Drag to spin 360°",
+    hero_hint:"Drag to rotate · real 3D",
+    model_unavailable:"3D preview unavailable — check your connection",
     colorways:"Colorways",
     home_pop_title:"Popular right now", home_pop_sub:"A quick look across every sport. Tap a jersey to customize it.",
     home_cat_title:"Shop by sport", home_cat_sub:"Three sports now — soccer's where we started, basketball and football are new.",
@@ -529,6 +550,8 @@ const I18N = {
     hero_cta1:"Ver jerseys", hero_cta2:"Arma tu kit",
     stat_designs:"Diseños", stat_sports:"Deportes", stat_teams:"Equipos vestidos",
     spin_hint:"Arrastra para girar 360°",
+    hero_hint:"Arrastra para girar · 3D real",
+    model_unavailable:"Vista 3D no disponible — revisa tu conexión",
     colorways:"Colores",
     home_pop_title:"Lo más buscado", home_pop_sub:"Un vistazo rápido por todos los deportes. Toca un jersey para personalizarlo.",
     home_cat_title:"Compra por deporte", home_cat_sub:"Ya son tres deportes — empezamos con futbol; basquet y americano son nuevos.",
@@ -599,6 +622,19 @@ const COLORWAYS = [
   {id:'negro', body:'#17191c', sleeve:'#0c0d0f', trim:'#caa24a', num:'#caa24a'},
   {id:'azul',  body:'#1f4fd0', sleeve:'#17379a', trim:'#ffffff', num:'#ffffff'}
 ];
+
+/* ---- Hero 3D models: real Higgsfield GLB meshes, one per colorway dot.
+   `dot` is the swatch color chosen to match each jersey's primary color. ---- */
+const HERO_BASE = 'https://d8j0ntlcm91z4.cloudfront.net/user_3GuSVNhLzRQElgpwDOtrdgFLHSN/';
+const HERO_MODELS = [
+  {id:'azuloro', label:'Royal blue + gold', dot:'#1f4fd0', dot2:'#caa24a',
+   src:HERO_BASE+'hf_20261105_003342_e8bcecfa-6d4d-40d6-b263-86a710b5b33d.glb'},
+  {id:'negroverde', label:'Black + green', dot:'#17191c', dot2:'#0f7a46',
+   src:HERO_BASE+'hf_20261105_003337_0236bc3b-afc2-4d21-9521-f2d1546c1799.glb'},
+  {id:'rojoblanco', label:'Red + white', dot:'#d22a2a', dot2:'#ffffff',
+   src:HERO_BASE+'hf_20261105_002326_cf955fcd-e506-4904-8134-75e360066356.glb'}
+];
+let heroModelIdx = 0; // persists selected colorway across re-renders (lang switch)
 
 /* ---- Product catalog (placeholder) ---- */
 const PRODUCTS = [
@@ -697,7 +733,7 @@ class Jersey{
    Views
    ============================================================ */
 const app = document.getElementById('app');
-let heroJersey=null, czJersey=null, kitJersey=null;
+let czJersey=null, kitJersey=null;
 let czState = {cw:0, size:'M', name:'', number:'10'};
 let kitState = {tier:'15', sport:'soccer', team:'', logo:null};
 
@@ -743,10 +779,23 @@ function renderHome(){
         </div>
       </div>
       <div class="stage-wrap">
-        <div id="heroStage"></div>
-        <div class="spin-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v5h-5"></path></svg><span data-i18n="spin_hint"></span></div>
+        <div class="model-stage" id="heroStage">
+          <model-viewer id="heroModel" class="hero-model"
+            src="${HERO_MODELS[heroModelIdx].src}"
+            alt="Draggable 3D jersey — ${HERO_MODELS[heroModelIdx].label}"
+            camera-controls touch-action="pan-y" auto-rotate interaction-prompt="auto"
+            shadow-intensity="1" exposure="1.05"
+            camera-orbit="0deg 78deg 2.4m" min-camera-orbit="auto 0deg auto"
+            max-camera-orbit="auto 180deg auto" field-of-view="30deg"
+            environment-image="neutral" loading="eager" reveal="auto"></model-viewer>
+          <div class="model-fallback" id="heroFallback" aria-hidden="true">
+            ${jerseySVG(0,{back:false})}
+            <span class="mf-text" data-i18n="model_unavailable"></span>
+          </div>
+        </div>
+        <div class="spin-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"></path><path d="M21 3v5h-5"></path></svg><span data-i18n="hero_hint"></span></div>
         <div class="swatches" role="group" aria-label="Colorways">
-          ${COLORWAYS.map((c,i)=>`<button class="dot" data-cw="${i}" aria-pressed="${i===0}" style="background:${c.body}" aria-label="Colorway ${i+1}"></button>`).join('')}
+          ${HERO_MODELS.map((m,i)=>`<button class="dot" data-cw="${i}" aria-pressed="${i===heroModelIdx}" style="background:${m.dot}; box-shadow:inset 0 0 0 7px ${m.dot}, inset 0 0 0 9px ${m.dot2}" title="${m.label}" aria-label="${m.label}"></button>`).join('')}
         </div>
       </div>
     </div>
@@ -768,10 +817,41 @@ function renderHome(){
     </div>
   </section>`;
   afterRender();
-  heroJersey = new Jersey(document.getElementById('heroStage'), {cw:0, name:'BARATO', number:'10'});
-  app.querySelectorAll('.dot').forEach(d=>d.addEventListener('click',()=>{
-    const i=+d.dataset.cw; heroJersey.setColor(i);
-    app.querySelectorAll('.dot').forEach(x=>x.setAttribute('aria-pressed', x===d));
+  wireHeroModel();
+}
+
+/* Wire the real 3D GLB jersey (model-viewer) + colorway switching + fallback */
+function wireHeroModel(){
+  const stage = document.getElementById('heroStage');
+  const mv = document.getElementById('heroModel');
+  if(!stage || !mv) return;
+
+  const markOk = ()=>{ stage.classList.add('model-ok'); stage.classList.remove('model-failed'); };
+  const markFail = ()=>{ stage.classList.add('model-failed'); stage.classList.remove('model-ok'); };
+
+  let settleTimer = null;
+  const resetState = ()=>{
+    stage.classList.remove('model-ok','model-failed');
+    clearTimeout(settleTimer);
+    // If model-viewer never upgrades (CDN blocked) or the GLB stalls, reveal
+    // the "unavailable" note so the hero explains itself instead of stalling.
+    settleTimer = setTimeout(()=>{
+      if(!stage.classList.contains('model-ok')) markFail();
+    }, 9000);
+  };
+
+  mv.addEventListener('load', ()=>{ clearTimeout(settleTimer); markOk(); });
+  mv.addEventListener('error', ()=>{ clearTimeout(settleTimer); markFail(); });
+  resetState();
+
+  document.querySelectorAll('.stage-wrap .dot').forEach(d=>d.addEventListener('click',()=>{
+    const i = +d.dataset.cw;
+    heroModelIdx = i;
+    const m = HERO_MODELS[i];
+    mv.setAttribute('src', m.src);
+    mv.setAttribute('alt', 'Draggable 3D jersey — ' + m.label);
+    resetState();
+    document.querySelectorAll('.stage-wrap .dot').forEach(x=>x.setAttribute('aria-pressed', x===d));
   }));
 }
 function catCardHTML(cat, descKey, cw, isKit){
